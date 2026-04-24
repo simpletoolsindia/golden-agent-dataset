@@ -81,10 +81,13 @@ class TrajectoryGenerator:
 
         raw_steps = self._call_generator_llm(scenario_spec, sample)
 
+        parsed_steps = []
         for raw in raw_steps:
             step = self._parse_step(raw)
-            if step:
-                sample.assistant_trace.append(step)
+            if step is not None:
+                parsed_steps.append(step)
+
+        sample.assistant_trace = parsed_steps
 
         self._populate_final_response(sample)
         self._score_sample(sample)
@@ -253,36 +256,41 @@ class TrajectoryGenerator:
             call_0008,
         ]
 
-    def _parse_step(self, raw: GeneratedStep) -> Optional[StepType]:
+    def _parse_step(self, raw: GeneratedStep) -> Optional[Any]:
         """Parse a GeneratedStep dict into the appropriate Pydantic step model."""
         d = raw.raw
         t = d.get("type")
 
-        if t == StepType.REASONING:
+        if t == StepType.REASONING.value:
             return ReasoningStep(**d)
-        elif t == StepType.TOOL_CALL:
+        elif t == StepType.TOOL_CALL.value:
             return ToolCallStep(**d)
-        elif t == StepType.TOOL_RESULT:
-            d2 = dict(d)
-            d2.pop("type", None)
+        elif t == StepType.TOOL_RESULT.value:
             return ToolResultStep(
                 type=StepType.TOOL_RESULT,
-                tool_name=d2.pop("tool_name"),
-                call_id=d2.pop("call_id"),
-                status=ToolStatus(d2.pop("status", "success")),
-                summary=d2.pop("summary", ""),
-                validation=ValidationCheck(**d2.pop("validation", {"name": "ok", "passed": True})),
+                tool_name=d.get("tool_name", ""),
+                call_id=d.get("call_id", ""),
+                status=ToolStatus(d.get("status", "success")),
+                summary=d.get("summary", ""),
+                validation=ValidationCheck(
+                    **d.get("validation", {"name": "ok", "passed": True})
+                ),
                 output=ToolOutput(),
-                **{
-                    k: v for k, v in d2.items()
-                    if k in ToolResultStep.model_fields
-                },
+                exit_code=d.get("exit_code"),
+                duration_ms=d.get("duration_ms"),
+                state_update=d.get("state_update"),
             )
-        elif t == StepType.DECISION:
+        elif t == StepType.DECISION.value:
             from app.schema import DecisionStep
             return DecisionStep(**d)
-        elif t == StepType.FINAL:
+        elif t == StepType.FINAL.value:
             return FinalStep(**d)
+        elif t == StepType.REVIEW.value:
+            from app.schema import ReviewStep
+            return ReviewStep(**d)
+        elif t == StepType.FIX.value:
+            from app.schema import FixStep
+            return FixStep(**d)
 
         return None
 

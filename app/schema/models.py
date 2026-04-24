@@ -7,7 +7,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 # ─── Enums ────────────────────────────────────────────────────────────────────
@@ -384,6 +384,34 @@ class Sample(BaseModel):
     )
     quality: Quality = Field(default_factory=Quality)
     metadata: SampleMetadata = Field(default_factory=SampleMetadata)
+
+    @model_validator(mode="after")
+    def rehydrate_trace_steps(self) -> "Sample":
+        """Re-hydrate assistant_trace items from plain dicts after JSON reload."""
+        rehydrated: list = []
+        for item in self.assistant_trace:
+            if isinstance(item, dict):
+                t = item.get("type")
+                if t == StepType.REASONING.value:
+                    rehydrated.append(ReasoningStep(**item))
+                elif t == StepType.DECISION.value:
+                    rehydrated.append(DecisionStep(**item))
+                elif t == StepType.TOOL_CALL.value:
+                    rehydrated.append(ToolCallStep(**item))
+                elif t == StepType.TOOL_RESULT.value:
+                    rehydrated.append(ToolResultStep(**item))
+                elif t == StepType.REVIEW.value:
+                    rehydrated.append(ReviewStep(**item))
+                elif t == StepType.FIX.value:
+                    rehydrated.append(FixStep(**item))
+                elif t == StepType.FINAL.value:
+                    rehydrated.append(FinalStep(**item))
+                else:
+                    rehydrated.append(item)
+            else:
+                rehydrated.append(item)
+        self.assistant_trace = rehydrated
+        return self
 
     def get_call_ids(self) -> set:
         ids = set()

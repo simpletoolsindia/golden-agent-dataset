@@ -112,20 +112,32 @@ def validate_no_orphan_results(sample: Sample) -> list[ValidationIssue]:
 
 
 def validate_reasoning_supports_action(sample: Sample) -> list[ValidationIssue]:
-    """Every decision/action should be preceded by a reasoning step."""
+    """Every decision/action should be preceded by a reasoning step.
+
+    Valid trajectory: reasoning → tool_call → tool_result → decision → ...
+
+    Tool calls and results in a cycle do NOT reset had_reasoning;
+    only a new DECISION or REASONING resets it.
+    """
     issues: list[ValidationIssue] = []
     had_reasoning = False
 
     for step in sample.assistant_trace:
-        if step.type == StepType.REASONING:
+        t = step.type
+        if t == StepType.REASONING:
             had_reasoning = True
-        elif step.type == StepType.DECISION and not had_reasoning:
-            issues.append(ValidationIssue(
-                "reasoning_support",
-                "decision step without preceding reasoning",
-            ))
-            had_reasoning = False
-        elif step.type in (StepType.TOOL_CALL, StepType.FIX):
+        elif t == StepType.TOOL_CALL:
+            pass  # Don't reset — still in same reasoning cycle
+        elif t == StepType.TOOL_RESULT:
+            pass  # Don't reset — still in same reasoning cycle
+        elif t == StepType.DECISION:
+            if not had_reasoning:
+                issues.append(ValidationIssue(
+                    "reasoning_support",
+                    "decision step without preceding reasoning",
+                ))
+            had_reasoning = False  # Next action needs fresh reasoning
+        elif t == StepType.FIX:
             had_reasoning = False
 
     return issues
