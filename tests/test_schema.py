@@ -1,7 +1,6 @@
 """Unit tests for the schema models."""
 
 import pytest
-from pydantic import ValidationError
 
 from app.schema import (
     Sample,
@@ -13,10 +12,12 @@ from app.schema import (
     ReviewStep,
     FixStep,
     FinalStep,
+    ReviewIssue,
     ToolStatus,
     ToolOutput,
     ValidationCheck,
     StateUpdate,
+    ToolError,
     Quality,
     QualityDimension,
     TaskCategory,
@@ -155,15 +156,15 @@ class TestToolResultStep:
             summary="1 test failed",
             validation=ValidationCheck(name="exit_code", passed=False),
             output=ToolOutput(stdout="1 failed"),
-            error={
-                "category": "test_failure",
-                "message": "AssertionError: expected READ_COMMITTED, got AUTOCOMMIT",
-                "retryable": True,
-            },
+            error=ToolError(
+                category="test_failure",
+                message="AssertionError: expected READ_COMMITTED, got AUTOCOMMIT",
+                retryable=True,
+            ),
         )
         assert result.status == ToolStatus.FAILURE
         assert result.error is not None
-        assert result.error["category"] == "test_failure"
+        assert result.error.category == "test_failure"
 
 
 class TestReviewStep:
@@ -180,17 +181,17 @@ class TestReviewStep:
         review = ReviewStep(
             verdict=ReviewVerdict.NEEDS_FIX,
             issues=[
-                {
-                    "severity": "high",
-                    "message": "edit_file called without prior read_file",
-                    "step_ref": "call_0001",
-                }
+                ReviewIssue(
+                    severity="high",
+                    message="edit_file called without prior read_file",
+                    step_ref="call_0001",
+                )
             ],
             recommended_next_step="Add read_file before edit",
         )
         assert review.verdict == ReviewVerdict.NEEDS_FIX
         assert len(review.issues) == 1
-        assert review.issues[0]["severity"] == "high"
+        assert review.issues[0].severity == "high"
 
 
 class TestFixStep:

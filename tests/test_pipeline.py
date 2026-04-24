@@ -152,31 +152,71 @@ class TestSampleReviewer:
 class TestJudge:
     def test_judge_accepts_high_quality_sample(self):
         judge = Judge(min_avg_score=4.5, min_dimension_score=4)
+
+        # Build a sample with enough trace content to score well on all dimensions
         sample = Sample(
             id="test_judge_001",
             category=TaskCategory.BUG_FIX,
             language=Language.PYTHON,
-            user_input="Fix the bug",
+            user_input="Fix the bug by updating the isolation level to READ_COMMITTED for consistency",
             assistant_trace=[
+                ReasoningStep(
+                    goal="Fix isolation level bug",
+                    decision="Inspect session configuration first",
+                    why="The default may be inherited from the session factory",
+                    confidence=0.9,
+                ),
                 ToolCallStep(
                     tool_name="read_file",
                     call_id="call_0001",
-                    arguments={"path": "main.py"},
+                    arguments={"path": "db/session.py"},
                 ),
                 ToolResultStep(
                     tool_name="read_file",
                     call_id="call_0001",
                     status=ToolStatus.SUCCESS,
-                    summary="ok",
-                    validation=ValidationCheck(name="ok", passed=True),
+                    summary="Loaded session factory configuration",
+                    validation=ValidationCheck(name="read_ok", passed=True),
                     output=ToolOutput(),
                 ),
+                ToolCallStep(
+                    tool_name="edit_file",
+                    call_id="call_0004",
+                    arguments={
+                        "path": "db/session.py",
+                        "old_string": '"AUTOCOMMIT"',
+                        "new_string": '"READ_COMMITTED"',
+                    },
+                ),
+                ToolResultStep(
+                    tool_name="edit_file",
+                    call_id="call_0004",
+                    status=ToolStatus.SUCCESS,
+                    summary="Applied isolation level change",
+                    validation=ValidationCheck(name="edit_applied", passed=True),
+                    output=ToolOutput(),
+                ),
+                ToolCallStep(
+                    tool_name="test_code",
+                    call_id="call_0006",
+                    arguments={"target": "tests/test_transactions.py"},
+                ),
+                ToolResultStep(
+                    tool_name="test_code",
+                    call_id="call_0006",
+                    status=ToolStatus.SUCCESS,
+                    exit_code=0,
+                    duration_ms=1842,
+                    summary="3 tests passed",
+                    validation=ValidationCheck(name="exit_code_is_zero", passed=True),
+                    output=ToolOutput(stdout="=== 3 passed in 1.84s ==="),
+                ),
                 FinalStep(
-                    content="Fixed the bug",
-                    grounded_in=["call_0001"],
+                    content="Updated the default isolation level and verified tests pass",
+                    grounded_in=["call_0004", "call_0006"],
                 ),
             ],
-            final_response="Fixed the bug",
+            final_response="Updated the default isolation level in db/session.py and verified all tests pass",
         )
 
         verdict, quality = judge.judge(sample)
@@ -200,7 +240,8 @@ class TestJudge:
 class TestJSONLExporter:
     def test_export_and_reload(self, tmp_path):
         output = tmp_path / "test.jsonl"
-        exporter = JSONLExporter(output)
+        # Use a very large max_shard_size so no sharding occurs (all writes go to output_path)
+        exporter = JSONLExporter(output, max_shard_size=1_000_000)
 
         sample = Sample(
             id="sample_001",

@@ -66,15 +66,20 @@ class JSONLExporter:
         if self._lines_in_current_shard >= self.max_shard_size:
             self._flush()
             self._open_new_shard()
+            self._writer.parent.mkdir(parents=True, exist_ok=True)
+            self._writer.touch()
 
-        with open(self._writer or self.output_path, "a", encoding="utf-8") as fh:
+        # Always write to the current shard
+        target = self._writer if self._writer else self.output_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with open(target, "a", encoding="utf-8") as fh:
             fh.write(line)
             fh.write("\n")
 
         self._lines_in_current_shard += 1
 
         return ExportResult(
-            path=self._writer or self.output_path,
+            path=target,
             lines_written=self._lines_in_current_shard,
             verdict=verdict,
         )

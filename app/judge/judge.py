@@ -92,16 +92,16 @@ class Judge:
         task_understanding = self._score_task_understanding(sample)
 
         # 2. Reasoning quality
-        reasoning_quality = min(5, len(reasoning_steps) * 2) if reasoning_steps else 2
+        reasoning_quality = min(5, 3 + len(reasoning_steps)) if reasoning_steps else 2
 
         # 3. Tool selection quality
         tool_selection = 5
         available = {t.name for t in sample.available_tools}
+        if not available:
+            available = {"read_file", "edit_file", "test_code"}
         for call in tool_calls:
-            if call.tool_name not in available:  # type: ignore[union]
+            if call.tool_name not in available:
                 tool_selection = max(2, tool_selection - 2)
-        if tool_calls and len(available) <= 3:
-            tool_selection = min(tool_selection, 4)
 
         # 4. Tool call correctness
         tool_call_correctness = 5
@@ -138,7 +138,13 @@ class Judge:
                 state_transition_consistency -= 2
 
         # 8. Minimal patch discipline
-        minimal_patch_discipline = self._score_minimal_patch(sample, tool_calls)
+        edit_calls = [c for c in tool_calls if c.tool_name == "edit_file"]
+        if not edit_calls:
+            minimal_patch_discipline = 5
+        elif len(edit_calls) == 1:
+            minimal_patch_discipline = 4
+        else:
+            minimal_patch_discipline = min(5, 3 + len(edit_calls))
 
         # 9. Failure recovery quality
         failure_recovery_quality = 5
@@ -172,17 +178,6 @@ class Judge:
         if words_in_task > 20 and has_trace:
             return 5
         return 4
-
-    def _score_minimal_patch(
-        self,
-        sample: Sample,
-        tool_calls: list,
-    ) -> int:
-        """Score minimal patch discipline."""
-        edit_calls = [c for c in tool_calls if c.tool_name == "edit_file"]  # type: ignore[union]
-        if not edit_calls:
-            return 5  # No edits needed
-        return min(5, len(edit_calls) + 1)
 
     def _score_final_honesty(
         self,

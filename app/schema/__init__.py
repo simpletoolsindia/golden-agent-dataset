@@ -32,7 +32,6 @@ from app.schema.models import (
     ReviewStep,
     FixStep,
     FinalStep,
-    TraceStep,
     # Quality
     QualityDimension,
     Quality,
@@ -69,7 +68,6 @@ __all__ = [
     "ReviewStep",
     "FixStep",
     "FinalStep",
-    "TraceStep",
     "QualityDimension",
     "Quality",
     "Context",

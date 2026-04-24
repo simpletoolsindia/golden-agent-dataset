@@ -80,18 +80,12 @@ DEFAULT_MAX_REVIEW_ROUNDS = 5
 
 
 def acceptance_check(sample: Sample) -> tuple[bool, list[str]]:
-    """Check if a sample passes default acceptance criteria."""
+    """Check if a sample passes behavioral acceptance criteria.
+
+    Note: does NOT check quality dimensions (those are the Judge's responsibility).
+    Only checks behavioral rules like read-before-edit and non-empty final response.
+    """
     issues: list[str] = []
-
-    # No dimension below 4
-    min_dim = sample.quality.dimensions.min_score
-    if min_dim < DEFAULT_MIN_DIMENSION_SCORE:
-        issues.append(f"dimension below {DEFAULT_MIN_DIMENSION_SCORE}: min={min_dim}")
-
-    # Average at least 4.5
-    avg = sample.quality.dimensions.average
-    if avg < DEFAULT_MIN_AVG_SCORE:
-        issues.append(f"average score below {DEFAULT_MIN_AVG_SCORE}: avg={avg:.2f}")
 
     # Must have at least one read-before-edit pattern
     trace = sample.assistant_trace

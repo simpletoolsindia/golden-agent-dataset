@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, NotRequired
+from enum import Enum
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -12,7 +13,7 @@ from pydantic import BaseModel, Field, ConfigDict
 # ─── Enums ────────────────────────────────────────────────────────────────────
 
 
-class StepType(str, Literal):
+class StepType(str, Enum):
     REASONING = "reasoning"
     DECISION = "decision"
     TOOL_CALL = "tool_call"
@@ -22,7 +23,7 @@ class StepType(str, Literal):
     FINAL = "final"
 
 
-class TaskCategory(str, Literal):
+class TaskCategory(str, Enum):
     BUG_FIX = "bug_fix"
     FEATURE_ADD = "feature_add"
     REFACTOR_SAFE = "refactor_safe"
@@ -40,46 +41,46 @@ class TaskCategory(str, Literal):
     REVIEW_THEN_FIX = "review_then_fix"
 
 
-class Difficulty(str, Literal):
+class Difficulty(str, Enum):
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
 
 
-class Locale(str, Literal):
+class Locale(str, Enum):
     EN = "en"
 
 
-class Tone(str, Literal):
+class Tone(str, Enum):
     PROFESSIONAL = "professional"
     CONCISE = "concise"
     EDUCATED = "educated"
 
 
-class OutputStyle(str, Literal):
+class OutputStyle(str, Enum):
     CONCISE = "concise"
     VERBOSE = "verbose"
 
 
-class ToolStatus(str, Literal):
+class ToolStatus(str, Enum):
     SUCCESS = "success"
     FAILURE = "failure"
     PARTIAL = "partial"
 
 
-class ReviewVerdict(str, Literal):
+class ReviewVerdict(str, Enum):
     APPROVED = "approved"
     NEEDS_FIX = "needs_fix"
     REJECTED = "rejected"
 
 
-class JudgeVerdict(str, Literal):
+class JudgeVerdict(str, Enum):
     ACCEPT = "accept"
     REJECT = "reject"
     NEEDS_FIX = "needs_fix"
 
 
-class SampleSource(str, Literal):
+class SampleSource(str, Enum):
     SYNTHETIC = "synthetic"
     SWEBENCH = "swebench"
     TOOLMIND = "toolmind"
@@ -87,7 +88,7 @@ class SampleSource(str, Literal):
     HYBRID = "hybrid"
 
 
-class Language(str, Literal):
+class Language(str, Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -105,7 +106,7 @@ class ToolDefinition(BaseModel):
 
     name: str = Field(description="Unique tool identifier")
     description: str = Field(description="What the tool does")
-    arguments_schema: NotRequired[dict[str, Any]] = Field(
+    arguments_schema: Optional[dict[str, Any]] = Field(
         default=None,
         description="JSON schema for tool arguments",
     )
@@ -138,7 +139,7 @@ class Localization(BaseModel):
 
 
 class ReasoningStep(BaseModel):
-    type: Literal[StepType.REASONING] = StepType.REASONING
+    type: StepType = StepType.REASONING
     goal: str = Field(description="Current task goal")
     decision: str = Field(description="Chosen next action")
     why: str = Field(description="Why this action was chosen")
@@ -148,27 +149,27 @@ class ReasoningStep(BaseModel):
         le=1.0,
         description="Confidence in this decision",
     )
-    hypotheses: NotRequired[list[str]] = Field(
+    hypotheses: Optional[list[str]] = Field(
         default=None,
         description="Alternative hypotheses considered",
     )
 
 
 class DecisionStep(BaseModel):
-    type: Literal[StepType.DECISION] = StepType.DECISION
+    type: StepType = StepType.DECISION
     based_on: list[str] = Field(
         description="call_ids this decision is based on",
     )
     decision: str = Field(description="Chosen action or tool")
     why: str = Field(description="Why this option was chosen over alternatives")
-    rejected_options: NotRequired[list[str]] = Field(
+    rejected_options: Optional[list[str]] = Field(
         default=None,
         description="Options that were considered and rejected",
     )
 
 
 class ToolCallStep(BaseModel):
-    type: Literal[StepType.TOOL_CALL] = StepType.TOOL_CALL
+    type: StepType = StepType.TOOL_CALL
     tool_name: str = Field(description="Name of the tool to invoke")
     call_id: str = Field(
         description="Unique identifier for this call, e.g. call_0001",
@@ -182,18 +183,18 @@ class ToolCallStep(BaseModel):
 class ValidationCheck(BaseModel):
     name: str
     passed: bool
-    expected: NotRequired[Any] = None
-    actual: NotRequired[Any] = None
+    expected: Optional[Any] = None
+    actual: Optional[Any] = None
 
 
 class StateUpdate(BaseModel):
-    tests_passing: NotRequired[int] = None
-    tests_failing: NotRequired[int] = None
-    task_verified: NotRequired[bool] = None
-    current_phase: NotRequired[str] = None
-    blocked_by: NotRequired[str] = None
-    files_read: NotRequired[list[str]] = None
-    files_modified: NotRequired[list[str]] = None
+    tests_passing: Optional[int] = None
+    tests_failing: Optional[int] = None
+    task_verified: Optional[bool] = None
+    current_phase: Optional[str] = None
+    blocked_by: Optional[str] = None
+    files_read: Optional[list[str]] = None
+    files_modified: Optional[list[str]] = None
 
 
 class ToolError(BaseModel):
@@ -211,13 +212,13 @@ class ToolOutput(BaseModel):
 
 
 class ToolResultStep(BaseModel):
-    type: Literal[StepType.TOOL_RESULT] = StepType.TOOL_RESULT
+    type: StepType = StepType.TOOL_RESULT
     tool_name: str = Field(description="Name of the tool that produced this result")
     call_id: str = Field(description="Matches the call_id of the corresponding call")
     status: ToolStatus = Field(description="Overall success/failure/partial")
-    exit_code: NotRequired[int] = Field(default=None)
-    duration_ms: NotRequired[int] = Field(default=None)
-    input: NotRequired[dict[str, Any]] = Field(
+    exit_code: Optional[int] = Field(default=None)
+    duration_ms: Optional[int] = Field(default=None)
+    input: Optional[dict[str, Any]] = Field(
         default=None,
         description="Inputs used for this call",
     )
@@ -229,33 +230,35 @@ class ToolResultStep(BaseModel):
     validation: ValidationCheck = Field(
         description="Outcome of schema and content validation",
     )
-    state_update: NotRequired[StateUpdate] = Field(default=None)
-    error: NotRequired[ToolError] = Field(default=None)
+    state_update: Optional[StateUpdate] = Field(default=None)
+    error: Optional[ToolError] = Field(default=None)
 
 
 class ReviewIssue(BaseModel):
-    severity: Literal["low", "medium", "high", "critical"]
+    severity: str = Field(
+        description="Severity: low, medium, high, critical",
+    )
     message: str = Field(description="Description of the issue")
-    step_ref: NotRequired[str] = Field(
+    step_ref: Optional[str] = Field(
         default=None,
         description="call_id or step index this issue refers to",
     )
 
 
 class ReviewStep(BaseModel):
-    type: Literal[StepType.REVIEW] = StepType.REVIEW
+    type: StepType = StepType.REVIEW
     reviewer_role: str = Field(
         default="senior_dataset_reviewer",
         description="Role of the reviewer agent",
     )
     verdict: ReviewVerdict = Field(description="Overall review verdict")
     issues: list[ReviewIssue] = Field(default_factory=list)
-    recommended_next_step: NotRequired[str] = Field(default=None)
-    summary: NotRequired[str] = Field(default=None)
+    recommended_next_step: Optional[str] = Field(default=None)
+    summary: Optional[str] = Field(default=None)
 
 
 class FixStep(BaseModel):
-    type: Literal[StepType.FIX] = StepType.FIX
+    type: StepType = StepType.FIX
     fix_strategy: str = Field(description="What the repair agent will do")
     addresses_review_issues: list[str] = Field(
         default_factory=list,
@@ -264,27 +267,12 @@ class FixStep(BaseModel):
 
 
 class FinalStep(BaseModel):
-    type: Literal[StepType.FINAL] = StepType.FINAL
+    type: StepType = StepType.FINAL
     content: str = Field(description="Final response to the user")
     grounded_in: list[str] = Field(
         default_factory=list,
         description="call_ids that this answer is based on",
     )
-
-
-# ─── Union step type ─────────────────────────────────────────────────────────
-
-
-TraceStep = Annotated[
-    ReasoningStep
-    | DecisionStep
-    | ToolCallStep
-    | ToolResultStep
-    | ReviewStep
-    | FixStep
-    | FinalStep,
-    Field(discriminator="type"),
-]
 
 
 # ─── Quality scores ──────────────────────────────────────────────────────────
@@ -336,9 +324,9 @@ class QualityDimension(BaseModel):
 
 class Quality(BaseModel):
     score: float = Field(ge=0.0, le=5.0, default=0.0)
-    judge_verdict: JudgeVerdict = JudgeVerdict.REJECT
+    judge_verdict: JudgeVerdict = Field(default=JudgeVerdict.REJECT)
     dimensions: QualityDimension = Field(default_factory=QualityDimension)
-    reasoning: NotRequired[str] = Field(
+    reasoning: Optional[str] = Field(
         default=None,
         description="Why the judge arrived at this verdict",
     )
@@ -348,8 +336,8 @@ class SampleMetadata(BaseModel):
     source: SampleSource = Field(default=SampleSource.SYNTHETIC)
     verified: bool = Field(default=False)
     review_rounds: int = Field(default=0)
-    generator_version: NotRequired[str] = Field(default=None)
-    seed_task_id: NotRequired[str] = Field(default=None)
+    generator_version: Optional[str] = Field(default=None)
+    seed_task_id: Optional[str] = Field(default=None)
     tags: list[str] = Field(default_factory=list)
 
 
@@ -361,8 +349,8 @@ class Context(BaseModel):
         default_factory=list,
         description="Files relevant to this task",
     )
-    repo_path: NotRequired[str] = Field(default=None)
-    additional_context: NotRequired[dict[str, Any]] = Field(default=None)
+    repo_path: Optional[str] = Field(default=None)
+    additional_context: Optional[dict[str, Any]] = Field(default=None)
 
 
 class Sample(BaseModel):
@@ -386,7 +374,7 @@ class Sample(BaseModel):
     available_tools: list[ToolDefinition] = Field(default_factory=list)
     user_input: str = Field(description="The task prompt")
     context: Context = Field(default_factory=Context)
-    assistant_trace: list[TraceStep] = Field(
+    assistant_trace: list = Field(
         default_factory=list,
         description="Ordered list of trace steps",
     )
@@ -397,18 +385,17 @@ class Sample(BaseModel):
     quality: Quality = Field(default_factory=Quality)
     metadata: SampleMetadata = Field(default_factory=SampleMetadata)
 
-    def get_call_ids(self) -> set[str]:
-        """Return all call_ids present in the trace."""
-        ids: set[str] = set()
+    def get_call_ids(self) -> set:
+        ids = set()
         for step in self.assistant_trace:
             if hasattr(step, "call_id"):
                 ids.add(step.call_id)
         return ids
 
-    def get_tool_results(self) -> list[ToolResultStep]:
+    def get_tool_results(self) -> list:
         return [s for s in self.assistant_trace if s.type == StepType.TOOL_RESULT]
 
-    def get_final_answer_step(self) -> FinalStep | None:
+    def get_final_answer_step(self):
         for step in reversed(self.assistant_trace):
             if step.type == StepType.FINAL:
                 return step

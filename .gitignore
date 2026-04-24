@@ -15,6 +15,5 @@ dist/
 *.swo
 .claude/settings.local.json
 
-# Generated output files — keep outputs/.gitkeep via re-include
+# Generated output files go here during pipeline runs
 outputs/
-!outputs/.gitkeep
