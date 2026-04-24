@@ -9,11 +9,12 @@ dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-outputs/
-*.jsonl
-!.gitkeep
 .env
 .DS_Store
 *.swp
 *.swo
 .claude/settings.local.json
+
+# Generated output files — keep outputs/.gitkeep via re-include
+outputs/
+!outputs/.gitkeep

@@ -1,0 +1,226 @@
+{
+  "id": "sample_000001",
+  "category": "bug_fix",
+  "language": "python",
+  "difficulty": "medium",
+  "localization": {
+    "locale": "en",
+    "tone": "professional",
+    "style": "concise"
+  },
+  "rules": [
+    "Use only available tools",
+    "Do not claim success without verification",
+    "Prefer editing existing files over rewriting everything",
+    "Avoid redundant tool calls",
+    "If tests fail, analyze the failure before editing again"
+  ],
+  "guardrails": {
+    "forbidden_behaviors": [
+      "invent tool outputs",
+      "claim task completion without validation",
+      "modify unrelated files"
+    ],
+    "safety_policies": [
+      "avoid destructive commands unless explicitly required"
+    ]
+  },
+  "output_contract": {
+    "final_response_must_be_grounded": true,
+    "must_reference_successful_validation": true,
+    "must_acknowledge_incomplete_verification": true
+  },
+  "available_tools": [
+    {
+      "name": "read_file",
+      "description": "Read the contents of a file"
+    },
+    {
+      "name": "edit_file",
+      "description": "Edit an existing file by replacing a string pattern"
+    },
+    {
+      "name": "test_code",
+      "description": "Run the test suite or specific test file"
+    }
+  ],
+  "user_input": "Fix the transaction isolation level in db/session.py. The default is currently AUTOCOMMIT which causes consistency issues under concurrent load. Change it to READ_COMMITTED.",
+  "context": {
+    "repo_files": [
+      "db/session.py",
+      "db/transactions.py",
+      "tests/test_transactions.py"
+    ]
+  },
+  "assistant_trace": [
+    {
+      "type": "reasoning",
+      "goal": "Fix transaction isolation level for consistency",
+      "decision": "Inspect transaction and session setup before editing",
+      "why": "Isolation level may be defined in either the transaction layer or the session factory",
+      "confidence": 0.85,
+      "hypotheses": [
+        "Isolation is set in db/session.py session factory",
+        "Isolation is set in db/transactions.py transaction decorator"
+      ]
+    },
+    {
+      "type": "tool_call",
+      "tool_name": "read_file",
+      "call_id": "call_0001",
+      "arguments": {
+        "path": "db/session.py"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_name": "read_file",
+      "call_id": "call_0001",
+      "status": "success",
+      "duration_ms": 12,
+      "input": {
+        "path": "db/session.py"
+      },
+      "output": {
+        "stdout": "",
+        "stderr": "",
+        "content": "from sqlalchemy import create_engine\n\ndef get_session():\n    engine = create_engine(\n        DATABASE_URL,\n        isolation_level='AUTOCOMMIT'\n    )\n    return engine.connect()",
+        "diff": "",
+        "artifacts": []
+      },
+      "summary": "Loaded session factory configuration — isolation_level is set to AUTOCOMMIT",
+      "validation": {
+        "name": "read_ok",
+        "passed": true,
+        "expected": null,
+        "actual": null
+      },
+      "state_update": {
+        "files_read": ["db/session.py"],
+        "current_phase": "inspection"
+      },
+      "error": null
+    },
+    {
+      "type": "decision",
+      "based_on": ["call_0001"],
+      "decision": "edit_file",
+      "why": "session.py contains the default isolation level as a string literal — changing it here is the minimal change point",
+      "rejected_options": [
+        "rewrite transaction manager",
+        "modify tests first",
+        "add isolation_level parameter to session factory"
+      ]
+    },
+    {
+      "type": "tool_call",
+      "tool_name": "edit_file",
+      "call_id": "call_0004",
+      "arguments": {
+        "path": "db/session.py",
+        "old_string": "isolation_level='AUTOCOMMIT'",
+        "new_string": "isolation_level='READ_COMMITTED'"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_name": "edit_file",
+      "call_id": "call_0004",
+      "status": "success",
+      "duration_ms": 8,
+      "input": {
+        "path": "db/session.py",
+        "old_string": "isolation_level='AUTOCOMMIT'",
+        "new_string": "isolation_level='READ_COMMITTED'"
+      },
+      "output": {
+        "stdout": "",
+        "stderr": "",
+        "content": "",
+        "diff": "- isolation_level='AUTOCOMMIT'\n+ isolation_level='READ_COMMITTED'",
+        "artifacts": []
+      },
+      "summary": "Applied isolation level change from AUTOCOMMIT to READ_COMMITTED",
+      "validation": {
+        "name": "edit_applied",
+        "passed": true
+      },
+      "state_update": {
+        "files_modified": ["db/session.py"],
+        "current_phase": "fix_applied"
+      },
+      "error": null
+    },
+    {
+      "type": "tool_call",
+      "tool_name": "test_code",
+      "call_id": "call_0006",
+      "arguments": {
+        "target": "tests/test_transactions.py"
+      }
+    },
+    {
+      "type": "tool_result",
+      "tool_name": "test_code",
+      "call_id": "call_0006",
+      "status": "success",
+      "exit_code": 0,
+      "duration_ms": 1842,
+      "input": {
+        "target": "tests/test_transactions.py"
+      },
+      "output": {
+        "stdout": "=== 3 passed in 1.84s ===",
+        "stderr": "",
+        "content": "",
+        "diff": "",
+        "artifacts": []
+      },
+      "summary": "3 tests passed — isolation level change is correct",
+      "validation": {
+        "name": "exit_code_is_zero",
+        "passed": true,
+        "expected": 0,
+        "actual": 0
+      },
+      "state_update": {
+        "tests_passing": 3,
+        "tests_failing": 0,
+        "task_verified": true,
+        "current_phase": "verification_complete"
+      },
+      "error": null
+    },
+    {
+      "type": "final",
+      "content": "Updated the default isolation level in db/session.py from AUTOCOMMIT to READ_COMMITTED and verified that all 3 transaction tests pass.",
+      "grounded_in": ["call_0004", "call_0006"]
+    }
+  ],
+  "final_response": "Updated the default isolation level in db/session.py from AUTOCOMMIT to READ_COMMITTED and verified that all 3 transaction tests pass.",
+  "quality": {
+    "score": 4.9,
+    "judge_verdict": "accept",
+    "dimensions": {
+      "task_understanding": 5,
+      "reasoning_quality": 5,
+      "tool_selection_quality": 5,
+      "tool_call_correctness": 5,
+      "tool_result_completeness": 5,
+      "validation_correctness": 5,
+      "state_transition_consistency": 5,
+      "minimal_patch_discipline": 5,
+      "failure_recovery_quality": 5,
+      "final_response_honesty": 5
+    },
+    "reasoning": "Excellent trajectory. Read-before-edit pattern followed, minimal patch applied, verification confirmed with passing test results."
+  },
+  "metadata": {
+    "source": "synthetic",
+    "verified": true,
+    "review_rounds": 1,
+    "generator_version": "0.1.0",
+    "seed_task_id": "task_bug_fix_001",
+    "tags": ["bug_fix", "database", "transactions"]
+  }
+}
