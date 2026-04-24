@@ -123,6 +123,37 @@ Acceptance: no dimension below 4, average ≥ 4.5, all structural checks pass.
 
 ## Current status
 
-Phase 1 complete: schema, validators, generator, reviewer, RCA, repair, judge, SWE-bench transformer, JSONL exporter, CLI.
+**Phase 1 complete** — schema, validators, generator, reviewer, RCA, repair, judge, SWE-bench transformer, JSONL exporter, CLI.
 
-Run `python -m pytest tests/ -v` to verify the scaffold.
+**33 tests passing.** Pipeline generates 10/10 valid samples that pass all structural and behavioral validators.
+
+```bash
+# Verify
+python -m pytest tests/ -v
+
+# Generate and validate 10 samples
+python -c "
+from pathlib import Path
+from app.schema import Sample
+from app.validators import run_all_validators
+from app.generators import TrajectoryGenerator, PipelineConfig
+from app.judge import Judge
+
+gen = TrajectoryGenerator(PipelineConfig())
+judge = Judge(min_avg_score=4.5, min_dimension_score=4)
+out = Path('outputs/generated.jsonl')
+out.write_text('')
+for i in range(10):
+    s = gen.generate_one()
+    v, q = judge.judge(s)
+    s.quality, s.metadata.verified = q, v.value=='accept'
+    out.open('a').write(s.model_dump_json()+'\n')
+lines = [l for l in out.read_text().splitlines() if l]
+ok = sum(1 for l in lines if not run_all_validators(Sample.model_validate_json(l)))
+print(f'{ok}/{len(lines)} samples pass all validators')
+"
+```
+
+## Repository
+
+https://github.com/simpletoolsindia/golden-agent-dataset
