@@ -1,0 +1,102 @@
+# Example task templates for synthetic trajectory generation.
+# Each entry is a scenario spec that can be used as a seed prompt.
+
+tasks:
+  - id: "task_bug_fix_001"
+    category: "bug_fix"
+    language: "python"
+    difficulty: "medium"
+    user_input: |
+      Fix the transaction isolation level in db/session.py.
+      The default is currently AUTOCOMMIT which causes consistency issues
+      under concurrent load. Change it to READ_COMMITTED.
+    repo_files:
+      - "db/session.py"
+      - "db/transactions.py"
+      - "tests/test_transactions.py"
+    expected_capabilities:
+      - "read_before_edit"
+      - "minimal_patch"
+      - "test_validation"
+
+  - id: "task_feature_add_001"
+    category: "feature_add"
+    language: "python"
+    difficulty: "medium"
+    user_input: |
+      Add a rate limiter to the /api/users endpoint that allows
+      maximum 100 requests per minute per IP address.
+    repo_files:
+      - "api/routes.py"
+      - "api/middleware.py"
+      - "tests/test_routes.py"
+    expected_capabilities:
+      - "multi_file_editing"
+      - "read_before_edit"
+      - "test_validation"
+
+  - id: "task_refactor_001"
+    category: "refactor_safe"
+    language: "python"
+    difficulty: "easy"
+    user_input: |
+      Rename the function `get_user_by_id` to `fetch_user`
+      throughout the auth module. Preserve all call sites.
+    repo_files:
+      - "auth/users.py"
+      - "auth/helpers.py"
+    expected_capabilities:
+      - "read_before_edit"
+      - "minimal_patch"
+
+  - id: "task_test_repair_001"
+    category: "test_repair"
+    language: "python"
+    difficulty: "hard"
+    user_input: |
+      The test suite in tests/integration.py is failing because
+      the test assertions were written for an older API version.
+      Update the assertions to match the current API contract.
+    repo_files:
+      - "tests/integration.py"
+      - "api/client.py"
+    expected_capabilities:
+      - "read_before_edit"
+      - "test_iteration"
+      - "root_cause_analysis"
+
+  - id: "task_debug_rca_001"
+    category: "debugging_rca"
+    language: "python"
+    difficulty: "hard"
+    user_input: |
+      Investigate why the background job processor silently drops
+      jobs when the Redis connection is lost. Find the root cause
+      and fix it. The jobs should be re-queued instead of dropped.
+    repo_files:
+      - "jobs/processor.py"
+      - "jobs/queue.py"
+      - "tests/test_processor.py"
+    expected_capabilities:
+      - "root_cause_analysis"
+      - "read_before_edit"
+      - "test_validation"
+      - "minimal_patch"
+
+  - id: "task_partial_failure_001"
+    category: "partial_failure_recovery"
+    language: "python"
+    difficulty: "medium"
+    user_input: |
+      The new user registration flow is failing for ~5% of users
+      with a duplicate key error on email. Add proper conflict
+      handling that returns a friendly error message instead
+      of a 500 error.
+    repo_files:
+      - "api/users.py"
+      - "db/models.py"
+      - "tests/test_users.py"
+    expected_capabilities:
+      - "read_before_edit"
+      - "error_handling"
+      - "test_validation"

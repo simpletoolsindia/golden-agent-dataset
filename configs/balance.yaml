@@ -1,0 +1,62 @@
+# Task balancing configuration.
+# Controls the distribution of task types in the generated dataset.
+
+balance:
+  # Task difficulty distribution
+  difficulty:
+    easy: 0.25
+    medium: 0.50
+    hard: 0.25
+
+  # Task category distribution
+  category:
+    bug_fix: 0.20
+    feature_add: 0.15
+    refactor_safe: 0.10
+    test_repair: 0.10
+    config_fix: 0.05
+    dependency_fix: 0.05
+    lint_fix: 0.05
+    schema_update: 0.05
+    api_integration: 0.05
+    tool_use_only: 0.05
+    debugging_rca: 0.05
+
+  # Trajectory outcome distribution
+  trajectory:
+    straightforward_success: 0.40
+    one_failure_then_repair: 0.25
+    multiple_iterations: 0.15
+    partial_completion: 0.10
+    review_heavy: 0.10
+
+  # Language distribution (Phase 1)
+  language:
+    python: 0.60
+    javascript: 0.20
+    typescript: 0.20
+
+  # Tool count distribution
+  tool_count:
+    min: 1
+    max: 6
+    distribution: "uniform"
+
+# Quality acceptance thresholds
+acceptance:
+  min_avg_score: 4.5
+  min_dimension_score: 4
+  max_review_rounds: 5
+
+# Review weights per dimension
+quality_dimensions:
+  task_understanding: 1.0
+  reasoning_quality: 1.0
+  tool_selection_quality: 1.0
+  tool_call_correctness: 1.0
+  tool_result_completeness: 1.0
+  validation_correctness: 1.0
+  state_transition_consistency: 1.0
+  minimal_patch_discipline: 1.0
+  failure_recovery_quality: 1.0
+  final_response_honesty: 1.0

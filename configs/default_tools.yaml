@@ -1,0 +1,83 @@
+# Default tools available to all generated trajectories.
+
+tools:
+  - name: "read_file"
+    description: "Read the contents of a file from the repository"
+    arguments_schema:
+      type: "object"
+      properties:
+        path:
+          type: "string"
+          description: "Path to the file to read"
+      required: ["path"]
+
+  - name: "edit_file"
+    description: "Edit an existing file by replacing a string pattern"
+    arguments_schema:
+      type: "object"
+      properties:
+        path:
+          type: "string"
+          description: "Path to the file to edit"
+        old_string:
+          type: "string"
+          description: "The exact string to find and replace"
+        new_string:
+          type: "string"
+          description: "The replacement string"
+      required: ["path", "old_string", "new_string"]
+
+  - name: "test_code"
+    description: "Run the test suite or specific test file"
+    arguments_schema:
+      type: "object"
+      properties:
+        target:
+          type: "string"
+          description: "Path to the test file or test target"
+        verbose:
+          type: "boolean"
+          default: true
+      required: ["target"]
+
+  - name: "run_command"
+    description: "Run a shell command in the repository environment"
+    arguments_schema:
+      type: "object"
+      properties:
+        command:
+          type: "string"
+          description: "The shell command to execute"
+        cwd:
+          type: "string"
+          description: "Working directory for the command"
+      required: ["command"]
+
+  - name: "list_files"
+    description: "List files in a directory"
+    arguments_schema:
+      type: "object"
+      properties:
+        path:
+          type: "string"
+          description: "Directory path to list"
+        pattern:
+          type: "string"
+          description: "Glob pattern to filter files"
+      required: ["path"]
+
+  - name: "search_code"
+    description: "Search for a pattern in code files"
+    arguments_schema:
+      type: "object"
+      properties:
+        pattern:
+          type: "string"
+          description: "Regex or literal pattern to search for"
+        path:
+          type: "string"
+          description: "Directory or file to search in"
+        regex:
+          type: "boolean"
+          default: false
+      required: ["pattern", "path"]

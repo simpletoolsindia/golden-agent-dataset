@@ -1,0 +1,35 @@
+# Pipeline configuration for the golden dataset generation loop.
+# Load with PipelineConfig.from_yaml(Path("configs/pipeline.yaml"))
+
+generator:
+  model: "claude-opus-4-7"
+  temperature: 0.7
+  max_tokens: 8192
+  system_prompt: ""
+  max_iterations: 10
+
+reviewer:
+  model: "claude-opus-4-7"
+  temperature: 0.3
+  max_issues: 10
+
+rca:
+  model: "claude-opus-4-7"
+  temperature: 0.3
+
+repair:
+  model: "claude-opus-4-7"
+  temperature: 0.5
+  max_fix_attempts: 3
+
+judge:
+  model: "claude-opus-4-7"
+  temperature: 0.0
+  min_avg_score: 4.5
+  min_dimension_score: 4
+
+max_review_rounds: 3
+
+seed_prompts_dir: "prompts"
+
+output_dir: "outputs"
